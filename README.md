@@ -8,7 +8,7 @@ You can use binary releases or build from source. We use [Deno](https://deno.lan
 
 ### Binary Releases
 
-You can download the latest binary release from the [releases page](/releases/latest). The binary is a single executable file that you can run
+You can download the latest binary release from the [releases page](https://github.com/usesecond/aigate/releases). The binary is a single executable file that you can run
 from the command line.
 
 ### Build from Source
