@@ -60,6 +60,7 @@ AIGate supports the following providers:
 
 - [OpenAI](https://openai.com/)
 - [Azure OpenAI Service](https://azure.microsoft.com/en-us/products/ai-services/openai-service/)
+- [Anthropic](https://www.anthropic.com/)
 
 ## Features
 
