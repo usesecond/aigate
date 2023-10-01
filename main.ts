@@ -1,76 +1,107 @@
 import { Command } from "https://deno.land/x/cliffy@v1.0.0-rc.3/command/mod.ts";
 import { startServer } from "./core/server.ts";
 import { logger } from "./utils/logging.ts";
+import { z } from "https://deno.land/x/zod@v3.22.2/mod.ts";
 
-// TODO: Validate configuration file with zod.
-export interface Config {
-  authentication: {
-    enabled: boolean;
-    api_key: string;
-  };
-  providers: {
-    [key: string]: {
-      type:
-        | "OpenAI"
-        | "Azure OpenAI Service"
-        | "Anthropic"
-        | "Replicate"
-        | "Co:here";
-      api_key: string;
-      url: string;
-    };
-  };
-  cache?: {
-    enabled: boolean; // Whether or not to enable caching.
-    ttl: number; // Time to live in seconds.
-  } & (
-    | {
-        storage: "redis";
-        hostname: string;
-        port: number;
-        username?: string;
-        password?: string;
-        tls?: boolean;
+export const ConfigSchema = z.object({
+  authentication: z
+    .object({
+      enabled: z.boolean(),
+      api_key: z.string(),
+    })
+    .optional(),
+  providers: z.record(
+    z
+      .object({
+        type: z.enum([
+          "OpenAI",
+          "Azure OpenAI Service",
+          "Anthropic",
+          "Replicate",
+          "Co:here",
+        ]),
+        api_key: z.string(),
+        url: z.string().optional(),
+      })
+      .refine((data) => {
+        if (data.type === "Azure OpenAI Service") {
+          return data.url !== undefined;
+        }
+        return true;
+      }),
+  ),
+  cache: z
+    .object({
+      enabled: z.boolean(),
+      ttl: z.number(),
+      storage: z.enum(["redis", "memory"]),
+      hostname: z.string().optional(),
+      port: z.number().optional(),
+      username: z.string().optional(),
+      password: z.string().optional(),
+      tls: z.boolean().optional(),
+    })
+    .refine((data) => {
+      if (data.storage === "redis") {
+        // Hostname and port are required for Redis.
+        return data.hostname !== undefined && data.port !== undefined;
       }
-    | {
-        storage: "memory";
-      }
-  );
-  rate_limiting?: {
-    enabled: boolean; // Whether or not to enable rate limiting.
-    window_size: number; // Size of the rate limiting window in seconds.
-    limit: number; // Number of requests allowed per window.
-  };
-  plugins?: {
-    sentiment?: {
-      enabled: boolean;
-      provider: "azure" | "aws";
-      credentials:
-        | {
-            api_key: string; // Azure only.
-          }
-        | {
-            access_key_id: string;
-            secret_access_key: string;
-          };
-    };
-    language_detection?: {
-      enabled: boolean;
-      provider: "azure" | "aws";
-      credentials:
-        | {
-            provider: "azure";
-            api_key: string;
-          }
-        | {
-            provider: "aws";
-            access_key_id: string;
-            secret_access_key: string;
-          };
-    };
-  };
-  response_format?: "aigate" | "default"; // aigate or default. Default will return the raw response from the provider.
-}
+      return true;
+    })
+    .optional(),
+  rate_limiting: z
+    .object({
+      enabled: z.boolean(),
+      window_size: z.number(),
+      limit: z.number(),
+    })
+    .optional(),
+  plugins: z
+    .object({
+      sentiment: z
+        .object({
+          enabled: z.boolean(),
+          provider: z.enum(["azure", "aws"]),
+          credentials: z
+            .union([
+              z.object({
+                provider: z.literal("azure"),
+                api_key: z.string(),
+              }),
+              z.object({
+                provider: z.literal("aws"),
+                access_key_id: z.string(),
+                secret_access_key: z.string(),
+              }),
+            ])
+            .optional(),
+        })
+        .optional(),
+      language_detection: z
+        .object({
+          enabled: z.boolean(),
+          provider: z.enum(["azure", "aws"]),
+          credentials: z
+            .union([
+              z.object({
+                provider: z.literal("azure"),
+                api_key: z.string(),
+              }),
+              z.object({
+                provider: z.literal("aws"),
+                access_key_id: z.string(),
+                secret_access_key: z.string(),
+              }),
+            ])
+            .optional(),
+        })
+        .optional(),
+    })
+    .optional(),
+  response_format: z.enum(["aigate", "default"]).default("aigate"),
+});
+
+export type Config = z.infer<typeof ConfigSchema>;
 
 const start = new Command()
   .option("-p, --port <port:number>", "Port to start the proxy server on.", {
@@ -85,7 +116,7 @@ const start = new Command()
     "Enable debug logging. This will log all incoming requests and responses.",
     {
       default: false,
-    }
+    },
   )
   .description("Start the proxy server on the specified port.")
   .action((options) => {
@@ -94,11 +125,12 @@ const start = new Command()
     // Check if the configuration file exists.
     try {
       const jsonFile = Deno.readTextFileSync(options.config);
-      config = JSON.parse(jsonFile);
+      const parsedConfig = JSON.parse(jsonFile);
+      config = ConfigSchema.parse(parsedConfig);
     } catch (err) {
       logger.error(
         err,
-        "An error occurred while reading the configuration file."
+        "An error occurred while reading the configuration file.",
       );
       Deno.exit(1);
     }
@@ -106,7 +138,7 @@ const start = new Command()
     // Check if the specified port is valid.
     if (options.port < 1 || options.port > 65535) {
       logger.error(
-        `Invalid port specified: ${options.port}. Port must be between 1 and 65535.`
+        `Invalid port specified: ${options.port}. Port must be between 1 and 65535.`,
       );
       Deno.exit(1);
     }
@@ -144,8 +176,8 @@ const init = new Command()
           },
         },
         null,
-        2
-      )
+        2,
+      ),
     );
   });
 
@@ -154,7 +186,7 @@ await new Command()
   .version("0.1.0")
   .description(
     "AIGate allows you to integrate with Generative AI providers like OpenAI, Anthropic, and others using a simple CLI.\n\n" +
-      "For more information, please visit https://www.spotllm.com/aigate"
+      "For more information, please visit https://www.spotllm.com/aigate",
   )
   .command("start", start)
   .command("init", init)
