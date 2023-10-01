@@ -4,6 +4,8 @@ AIGate allows you to access the Generative AI providers through a proxy server
 which allows you to gather analytics, use uniform request and response formats,
 and use a single API key for all providers.
 
+_AIGate is still under heavy development and not ready for production use._
+
 ## Installation
 
 You can use binary releases or build from source. We use
