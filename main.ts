@@ -69,7 +69,7 @@ export interface Config {
           };
     };
   };
-  response_format?: "openproxy" | "default"; // openproxy or default. Default will return the raw response from the provider.
+  response_format?: "aigate" | "default"; // aigate or default. Default will return the raw response from the provider.
 }
 
 const start = new Command()
@@ -77,7 +77,7 @@ const start = new Command()
     default: 8080,
   })
   .option("-c, --config <config:string>", "Path to the configuration file.", {
-    default: "./openproxy.json",
+    default: "./aigate.json",
     required: true,
   })
   .option(
@@ -128,7 +128,7 @@ const init = new Command()
   .action(() => {
     logger.info("Initializing new configuration file.");
     Deno.writeTextFileSync(
-      "./openproxy.json",
+      "./aigate.json",
       JSON.stringify(
         {
           providers: {
@@ -150,11 +150,11 @@ const init = new Command()
   });
 
 await new Command()
-  .name("openproxy")
+  .name("aigate")
   .version("0.1.0")
   .description(
-    "openproxy allows you to integrate with Generative AI providers like OpenAI, Anthropic, and others using a simple CLI.\n\n" +
-      "For more information, please visit https://www.spotllm.com/openproxy"
+    "AIGate allows you to integrate with Generative AI providers like OpenAI, Anthropic, and others using a simple CLI.\n\n" +
+      "For more information, please visit https://www.spotllm.com/aigate"
   )
   .command("start", start)
   .command("init", init)
