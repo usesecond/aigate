@@ -92,3 +92,6 @@ Thumbs.db
 
 # IDE - VSCode
 .vscode/*
+
+# Config
+aigate.json
