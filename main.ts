@@ -123,6 +123,32 @@ const start = new Command()
     startServer(options.port, config);
   });
 
+const init = new Command()
+  .description("Initialize a new configuration file.")
+  .action(() => {
+    logger.info("Initializing new configuration file.");
+    Deno.writeTextFileSync(
+      "./openproxy.json",
+      JSON.stringify(
+        {
+          providers: {
+            example: {
+              type: "OpenAI",
+              api_key: "YOUR_API_KEY",
+            },
+          },
+          cache: {
+            enabled: true,
+            ttl: 60 * 60 * 12,
+            storage: "memory",
+          },
+        },
+        null,
+        2
+      )
+    );
+  });
+
 await new Command()
   .name("openproxy")
   .version("0.1.0")
@@ -131,4 +157,5 @@ await new Command()
       "For more information, please visit https://www.spotllm.com/openproxy"
   )
   .command("start", start)
+  .command("init", init)
   .parse(Deno.args);
