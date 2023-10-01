@@ -1,4 +1,4 @@
-import { type Redis, connect } from "https://deno.land/x/redis@v0.31.0/mod.ts";
+import { connect, type Redis } from "https://deno.land/x/redis@v0.31.0/mod.ts";
 import { Config } from "../main.ts";
 
 export interface Cacher {
@@ -29,7 +29,7 @@ class RedisCacher implements Cacher {
     username?: string,
     password?: string,
     tls?: boolean,
-    ttl?: number
+    ttl?: number,
   ) {
     this.redis = connect({
       hostname: hostname,
@@ -113,13 +113,19 @@ class MemoryCacher implements Cacher {
 
 export function getCacher(config: Config): Cacher {
   if (config.cache?.storage === "redis") {
+    if (!config.cache.hostname || !config.cache.port) {
+      throw new Error(
+        "Hostname and port are required for Redis cache storage.",
+      );
+    }
+
     return new RedisCacher(
       config.cache.hostname,
       config.cache.port,
       config.cache.username,
       config.cache.password,
       config.cache.tls,
-      config.cache.ttl
+      config.cache.ttl,
     );
   } else {
     return new MemoryCacher(config.cache?.ttl);

@@ -38,7 +38,7 @@ export function startServer(port: number, cfg: Config) {
         keyGenerator: () => {
           return ""; // We use a global rate limit.
         },
-      })
+      }),
     );
   }
 
@@ -111,7 +111,7 @@ export function startServer(port: number, cfg: Config) {
             {
               apiKey: providerConfig.api_key as string,
             },
-            oai.OpenAIChatCompletionArgs.parse(data)
+            oai.OpenAIChatCompletionArgs.parse(data),
           );
 
           res.json(resp);
@@ -120,8 +120,8 @@ export function startServer(port: number, cfg: Config) {
           return;
         }
       } else if (providerConfig.type === "Azure OpenAI Service") {
-        const deploymentId =
-          req.header("Azure-OpenAI-Deployment-Id") || data.deploymentId;
+        const deploymentId = req.header("Azure-OpenAI-Deployment-Id") ||
+          data.deploymentId;
 
         if (data.stream) {
           // TODO: Implement streaming.
@@ -132,7 +132,7 @@ export function startServer(port: number, cfg: Config) {
               deploymentId: deploymentId,
               url: providerConfig.url as string,
             },
-            azoai.AzureOpenAIChatCompletionArgs.parse(data)
+            azoai.AzureOpenAIChatCompletionArgs.parse(data),
           );
 
           res.json(resp);
@@ -189,15 +189,15 @@ export function startServer(port: number, cfg: Config) {
             apiKey: providerConfig.api_key as string,
             stream: data?.stream,
           },
-          oai.OpenAICompletionArgs.parse(data)
+          oai.OpenAICompletionArgs.parse(data),
         );
 
         res.json(resp);
         cacher?.set(JSON.stringify({ provider, data }), JSON.stringify(resp));
         return;
       } else if (providerConfig.type === "Azure OpenAI Service") {
-        const deploymentId =
-          req.header("Azure-OpenAI-Deployment-Id") || data.deploymentId;
+        const deploymentId = req.header("Azure-OpenAI-Deployment-Id") ||
+          data.deploymentId;
 
         const resp = await azoai.completion(
           {
@@ -205,7 +205,7 @@ export function startServer(port: number, cfg: Config) {
             deploymentId: deploymentId,
             url: providerConfig.url as string,
           },
-          azoai.AzureOpenAICompletionArgs.parse(data)
+          azoai.AzureOpenAICompletionArgs.parse(data),
         );
 
         res.json(resp);
@@ -242,12 +242,12 @@ export function startServer(port: number, cfg: Config) {
       const fileHash = await crypto.subtle.digest(
         "SHA-256",
         // deno-lint-ignore no-explicit-any
-        (req as any).file.buffer
+        (req as any).file.buffer,
       );
 
       if (cacher && !req.header("Cache-Control")?.includes("no-cache")) {
         const cached = await cacher.get(
-          JSON.stringify({ provider, data, fileHash })
+          JSON.stringify({ provider, data, fileHash }),
         );
 
         if (cached) {
@@ -265,8 +265,8 @@ export function startServer(port: number, cfg: Config) {
       if (providerConfig.type === "OpenAI") {
         // TODO: Implement audio transcription.
       } else if (providerConfig.type === "Azure OpenAI Service") {
-        const deploymentId =
-          req.header("Azure-OpenAI-Deployment-Id") || data.deploymentId;
+        const deploymentId = req.header("Azure-OpenAI-Deployment-Id") ||
+          data.deploymentId;
 
         const resp = await azoai.audioTranscription(
           {
@@ -278,14 +278,14 @@ export function startServer(port: number, cfg: Config) {
             // deno-lint-ignore no-explicit-any
             file: (req as any).file,
             ...data,
-          })
+          }),
         );
 
         // Response may not be JSON.
         res.header("Content-Type", resp.contentType).send(resp.data);
         cacher?.set(
           JSON.stringify({ provider, data, fileHash }),
-          JSON.stringify(resp)
+          JSON.stringify(resp),
         );
         return;
       }
@@ -321,8 +321,8 @@ export function startServer(port: number, cfg: Config) {
       if (providerConfig.type === "OpenAI") {
         // TODO: Implement audio translation.
       } else if (providerConfig.type === "Azure OpenAI Service") {
-        const deploymentId =
-          req.header("Azure-OpenAI-Deployment-Id") || data.deploymentId;
+        const deploymentId = req.header("Azure-OpenAI-Deployment-Id") ||
+          data.deploymentId;
 
         const resp = await azoai.audioTranslation(
           {
@@ -334,7 +334,7 @@ export function startServer(port: number, cfg: Config) {
             // deno-lint-ignore no-explicit-any
             file: (req as any).file,
             ...data,
-          })
+          }),
         );
 
         // Response may not be JSON.
@@ -372,8 +372,8 @@ export function startServer(port: number, cfg: Config) {
       if (providerConfig.type === "OpenAI") {
         return;
       } else if (providerConfig.type === "Azure OpenAI Service") {
-        const deploymentId =
-          req.header("Azure-OpenAI-Deployment-Id") || data.deploymentId;
+        const deploymentId = req.header("Azure-OpenAI-Deployment-Id") ||
+          data.deploymentId;
 
         const resp = await azoai.embeddings(
           {
@@ -381,7 +381,7 @@ export function startServer(port: number, cfg: Config) {
             deploymentId: deploymentId,
             url: providerConfig.url as string,
           },
-          azoai.AzureOpenAIEmbeddingsArgs.parse(data)
+          azoai.AzureOpenAIEmbeddingsArgs.parse(data),
         );
 
         res.json(resp);

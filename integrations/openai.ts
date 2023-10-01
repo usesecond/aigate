@@ -20,7 +20,7 @@ export const OpenAIChatCompletionArgs = z.object({
             arguments: z.record(z.any()),
           })
           .optional(),
-      })
+      }),
     )
     .min(1),
   functions: z
@@ -29,7 +29,7 @@ export const OpenAIChatCompletionArgs = z.object({
         name: z.string(),
         description: z.string().optional(),
         parameters: z.record(z.any()),
-      })
+      }),
     )
     .optional(),
   function_call: z.string().or(z.record(z.any())).optional(),
@@ -75,18 +75,17 @@ export const OpenAIAudioTranscriptionArgs = z.object({
  * @param model Model to use.
  * @param messages Messages to use.
  * @param opts Options.
- *
  */
 export async function chatCompletion(
   opts: OpenAIOpts,
-  args?: z.infer<typeof OpenAIChatCompletionArgs>
+  args?: z.infer<typeof OpenAIChatCompletionArgs>,
 ) {
   logger.debug(
     {
       opts,
       args,
     },
-    "Sending OpenAI chat completion request"
+    "Sending OpenAI chat completion request",
   );
 
   // Check if streaming
@@ -121,7 +120,7 @@ export async function completion(
   model: string,
   prompt: string,
   opts: OpenAIOpts,
-  args?: z.infer<typeof OpenAICompletionArgs>
+  args?: z.infer<typeof OpenAICompletionArgs>,
 ) {}
 
 /**
@@ -135,7 +134,7 @@ export async function audioTranscription(
   model: string,
   audio: Uint8Array,
   opts: OpenAIOpts,
-  args?: z.infer<typeof OpenAIAudioTranscriptionArgs>
+  args?: z.infer<typeof OpenAIAudioTranscriptionArgs>,
 ) {}
 
 /**
@@ -153,7 +152,7 @@ export async function audioTranslation(
     temperature?: number;
     prompt?: string;
     response_format?: "json" | "text" | "srt" | "vtt" | "verbose_json";
-  }
+  },
 ) {}
 
 /**
@@ -169,7 +168,7 @@ export async function embeddings(
   opts: OpenAIOpts,
   args?: {
     user?: string;
-  }
+  },
 ) {}
 
 /**
@@ -188,7 +187,7 @@ export async function imageGeneration(
     size?: string;
     response_format?: "url" | "b64_json";
     user?: string;
-  }
+  },
 ) {}
 
 /**
@@ -208,7 +207,7 @@ export async function imageEditing(
     size?: string;
     response_format?: "url" | "b64_json";
     user?: string;
-  }
+  },
 ) {}
 
 /**
@@ -227,5 +226,5 @@ export async function imageVariation(
     size?: string;
     response_format?: "url" | "b64_json";
     user?: string;
-  }
+  },
 ) {}

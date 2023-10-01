@@ -21,7 +21,7 @@ export const AzureOpenAIChatCompletionArgs = z.object({
             arguments: z.record(z.any()),
           })
           .optional(),
-      })
+      }),
     )
     .min(1),
   functions: z
@@ -30,7 +30,7 @@ export const AzureOpenAIChatCompletionArgs = z.object({
         name: z.string(),
         description: z.string().optional(),
         parameters: z.record(z.any()),
-      })
+      }),
     )
     .optional(),
   function_call: z.string().or(z.record(z.any())).optional(),
@@ -93,18 +93,17 @@ export const AzureOpenAIEmbeddingsArgs = z.object({
  * @param model Model to use.
  * @param messages Messages to use.
  * @param opts Options.
- *
  */
 export async function chatCompletion(
   opts: AzureOpenAIOpts,
-  args?: z.infer<typeof AzureOpenAIChatCompletionArgs>
+  args?: z.infer<typeof AzureOpenAIChatCompletionArgs>,
 ) {
   logger.debug(
     {
       opts,
       args,
     },
-    "Sending Azure OpenAI chat completion request"
+    "Sending Azure OpenAI chat completion request",
   );
 
   // Check if streaming
@@ -120,7 +119,7 @@ export async function chatCompletion(
           "Content-Type": "application/json",
         },
         body: JSON.stringify(args),
-      }
+      },
     );
 
     const json = await resp.json();
@@ -140,14 +139,14 @@ export async function chatCompletion(
  */
 export async function completion(
   opts: AzureOpenAIOpts,
-  args: z.infer<typeof AzureOpenAICompletionArgs>
+  args: z.infer<typeof AzureOpenAICompletionArgs>,
 ) {
   logger.debug(
     {
       opts,
       args,
     },
-    "Sending Azure OpenAI completion request"
+    "Sending Azure OpenAI completion request",
   );
 
   const resp = await fetch(
@@ -159,7 +158,7 @@ export async function completion(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(args),
-    }
+    },
   );
 
   const json = await resp.json();
@@ -178,7 +177,7 @@ export async function completion(
  */
 export async function audioTranscription(
   opts: AzureOpenAIOpts,
-  args: z.infer<typeof AzureOpenAIAudioTranscriptionArgs>
+  args: z.infer<typeof AzureOpenAIAudioTranscriptionArgs>,
 ) {
   logger.debug(
     {
@@ -193,7 +192,7 @@ export async function audioTranscription(
         },
       },
     },
-    "Sending Azure OpenAI audio transcription request"
+    "Sending Azure OpenAI audio transcription request",
   );
 
   const formData = new FormData();
@@ -216,7 +215,7 @@ export async function audioTranscription(
         "api-key": opts.apiKey,
       },
       body: formData,
-    }
+    },
   );
 
   // Response may not be JSON.
@@ -225,7 +224,7 @@ export async function audioTranscription(
 
   logger.debug(
     { respData },
-    "Received Azure OpenAI audio transcription response"
+    "Received Azure OpenAI audio transcription response",
   );
 
   return {
@@ -242,7 +241,7 @@ export async function audioTranscription(
  */
 export async function audioTranslation(
   opts: AzureOpenAIOpts,
-  args: z.infer<typeof AzureOpenAIAudioTranslationArgs>
+  args: z.infer<typeof AzureOpenAIAudioTranslationArgs>,
 ) {
   logger.debug(
     {
@@ -256,7 +255,7 @@ export async function audioTranslation(
         },
       },
     },
-    "Sending Azure OpenAI audio translation request"
+    "Sending Azure OpenAI audio translation request",
   );
 
   const formData = new FormData();
@@ -279,7 +278,7 @@ export async function audioTranslation(
         "api-key": opts.apiKey,
       },
       body: formData,
-    }
+    },
   );
 
   // Response may not be JSON.
@@ -288,7 +287,7 @@ export async function audioTranslation(
 
   logger.debug(
     { respData },
-    "Received Azure OpenAI audio translation response"
+    "Received Azure OpenAI audio translation response",
   );
 
   return {
@@ -306,14 +305,14 @@ export async function audioTranslation(
  */
 export async function embeddings(
   opts: AzureOpenAIOpts,
-  args: z.infer<typeof AzureOpenAIEmbeddingsArgs>
+  args: z.infer<typeof AzureOpenAIEmbeddingsArgs>,
 ) {
   logger.debug(
     {
       opts,
       args,
     },
-    "Sending Azure OpenAI embeddings request"
+    "Sending Azure OpenAI embeddings request",
   );
 
   const resp = await fetch(
@@ -325,7 +324,7 @@ export async function embeddings(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(args),
-    }
+    },
   );
 
   const json = await resp.json();
@@ -351,7 +350,7 @@ export async function imageGeneration(
     size?: string;
     response_format?: "url" | "b64_json";
     user?: string;
-  }
+  },
 ) {}
 
 /**
@@ -371,7 +370,7 @@ export async function imageEditing(
     size?: string;
     response_format?: "url" | "b64_json";
     user?: string;
-  }
+  },
 ) {}
 
 /**
@@ -390,5 +389,5 @@ export async function imageVariation(
     size?: string;
     response_format?: "url" | "b64_json";
     user?: string;
-  }
+  },
 ) {}
