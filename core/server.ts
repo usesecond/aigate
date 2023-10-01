@@ -6,6 +6,7 @@ import { Config } from "../main.ts";
 import { Cacher, getCacher } from "./cache.ts";
 import * as oai from "../integrations/openai.ts";
 import * as azoai from "../integrations/azure-openai.ts";
+import * as anthropic from "../integrations/anthropic.ts";
 import { logger } from "../utils/logging.ts";
 
 let config: Config;
@@ -140,6 +141,20 @@ export function startServer(port: number, cfg: Config) {
           cacher?.set(JSON.stringify({ provider, data }), JSON.stringify(resp));
           return;
         }
+      } else if (providerConfig.type === "Anthropic") {
+        if (data.stream) {
+          // TODO: Implement streaming.
+        } else {
+          const resp = await anthropic.chatCompletion(
+            {
+              apiKey: providerConfig.api_key,
+            },
+            anthropic.AnthropicChatCompletionArgs.parse(data),
+          );
+
+          res.json(resp);
+          return;
+        }
       }
     } catch (e) {
       logger.error(e, "Error while proxying request");
@@ -210,6 +225,16 @@ export function startServer(port: number, cfg: Config) {
 
         res.json(resp);
         cacher?.set(JSON.stringify({ provider, data }), JSON.stringify(resp));
+        return;
+      } else if (providerConfig.type === "Anthropic") {
+        const resp = await anthropic.completion(
+          {
+            apiKey: providerConfig.api_key,
+          },
+          anthropic.AnthropicCompletionArgs.parse(data),
+        );
+
+        res.json(resp);
         return;
       }
     } catch (_e) {
