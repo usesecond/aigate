@@ -422,5 +422,47 @@ export function startServer(port: number, cfg: Config) {
     }
   });
 
+  app.post("/images/generations", async (req, res) => {
+    const data = req.body;
+
+    const provider = data.provider || req.header("X-Provider");
+
+    // Check if provider exists in config.
+    if (!config.providers[provider]) {
+      res.status(400).json({
+        error: "Invalid provider.",
+        source: "proxy",
+      });
+      return;
+    }
+
+    const providerConfig = config.providers[provider];
+
+    try {
+      if (providerConfig.type === "OpenAI") {
+        // TODO: Implement image generation.
+      } else if (providerConfig.type === "Azure OpenAI Service") {
+        const resp = await azoai.imageGeneration(
+          {
+            apiKey: providerConfig.api_key,
+            url: providerConfig.url as string,
+          },
+          azoai.AzureOpenAIImageGenerationArgs.parse(data),
+        );
+
+        res.json(resp);
+        return;
+      }
+    } catch (e) {
+      logger.error(e, "Error while proxying request");
+      res.status(500).json({
+        error: "Internal server error.",
+        message: e.message,
+        source: "proxy",
+      });
+      return;
+    }
+  });
+
   app.listen({ port: port });
 }

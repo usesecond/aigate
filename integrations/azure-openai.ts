@@ -3,7 +3,7 @@ import { logger } from "../utils/logging.ts";
 
 export type AzureOpenAIOpts = {
   stream?: boolean;
-  deploymentId: string;
+  deploymentId?: string;
   apiKey: string;
   url: string;
 };
@@ -85,6 +85,12 @@ export const AzureOpenAIAudioTranslationArgs = z.object({
 export const AzureOpenAIEmbeddingsArgs = z.object({
   input: z.string(),
   user: z.string().optional(),
+});
+
+export const AzureOpenAIImageGenerationArgs = z.object({
+  prompt: z.string(),
+  n: z.number().optional(),
+  size: z.enum(["256x256", "512x512", "1024x1024"]).optional(),
 });
 
 /**
@@ -342,52 +348,83 @@ export async function embeddings(
  * @param opts Options.
  */
 export async function imageGeneration(
-  model: string,
-  prompt: string,
   opts: AzureOpenAIOpts,
-  args?: {
-    n?: number;
-    size?: string;
-    response_format?: "url" | "b64_json";
-    user?: string;
-  },
-) {}
+  args: z.infer<typeof AzureOpenAIImageGenerationArgs>,
+) {
+  logger.debug(
+    {
+      opts,
+      args,
+    },
+    "Sending Azure OpenAI image generation request",
+  );
 
-/**
- * Edit images using the OpenAI API.
- *
- * @param model Model to use.
- * @param image Image to edit.
- * @param opts Options.
- */
-export async function imageEditing(
-  model: string,
-  image: Uint8Array,
-  opts: AzureOpenAIOpts,
-  args?: {
-    mask?: Uint8Array;
-    n?: number;
-    size?: string;
-    response_format?: "url" | "b64_json";
-    user?: string;
-  },
-) {}
+  const resp = await fetch(
+    `${opts.url}/openai/images/generations:submit?api-version=2023-08-01-preview`,
+    {
+      method: "POST",
+      headers: {
+        "api-key": opts.apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(args),
+    },
+  );
 
-/**
- * Create image variations using the OpenAI API.
- *
- * @param model Model to use.
- * @param image Image to use.
- * @param opts Options.
- */
-export async function imageVariation(
-  model: string,
-  image: Uint8Array,
-  opts: AzureOpenAIOpts,
-  args?: {
-    n?: number;
-    size?: string;
-    response_format?: "url" | "b64_json";
-    user?: string;
-  },
-) {}
+  if (!resp.ok) {
+    throw new Error(
+      `Received non-OK response from Azure OpenAI image generation: ${resp.status} ${resp.statusText}`,
+    );
+  } else {
+    const json = await resp.json();
+    logger.debug(
+      { json },
+      "Received Azure OpenAI image generation request response",
+    );
+
+    let success = false;
+    let tries = 0;
+
+    // Try to get the result until it is ready.
+    while (!success && tries < 10) {
+      logger.debug("Trying to get Azure OpenAI image generation result");
+
+      const resultResp = await fetch(
+        `${opts.url}/openai/operations/images/${json.id}?api-version=2023-08-01-preview`,
+        {
+          method: "GET",
+          headers: {
+            "api-key": opts.apiKey,
+          },
+        },
+      );
+
+      const resultJson = await resultResp.json();
+
+      logger.debug(
+        { resultJson },
+        "Received Azure OpenAI image generation result response",
+      );
+
+      if (resultJson.status === "succeeded") {
+        success = true;
+        return resultJson.result;
+      } else if (
+        resultJson.status === "failed" ||
+        resultJson.status === "canceled" ||
+        resultJson.status === "deleted"
+      ) {
+        throw new Error(
+          `Azure OpenAI image generation failed: ${resultJson.error.message}`,
+        );
+      } else {
+        // Wait 1 second before trying again.
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+
+      tries++;
+    }
+
+    throw new Error("Azure OpenAI image generation timed out after 10 tries");
+  }
+}
