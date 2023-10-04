@@ -112,28 +112,30 @@ export async function chatCompletion(
     "Sending Azure OpenAI chat completion request",
   );
 
-  // Check if streaming
-  if (opts.stream) {
-    // TODO: Implement streaming.
-  } else {
-    const resp = await fetch(
-      `${opts.url}/openai/deployments/${opts.deploymentId}/chat/completions?api-version=2023-08-01-preview`,
-      {
-        method: "POST",
-        headers: {
-          "api-key": opts.apiKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(args),
+  const resp = await fetch(
+    `${opts.url}/openai/deployments/${opts.deploymentId}/chat/completions?api-version=2023-08-01-preview`,
+    {
+      method: "POST",
+      headers: {
+        "api-key": opts.apiKey,
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({
+        ...args,
+        stream: opts.stream ?? false,
+      }),
+    },
+  );
 
-    const json = await resp.json();
-
-    logger.debug({ json }, "Received Azure OpenAI chat completion response");
-
-    return json;
+  if (opts.stream) {
+    logger.debug("Received Azure OpenAI chat completion response (streaming)");
+    return resp;
   }
+
+  const json = await resp.json();
+  logger.debug({ json }, "Received Azure OpenAI chat completion response");
+
+  return json;
 }
 
 /**

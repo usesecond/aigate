@@ -51,7 +51,7 @@ export async function completion(
   });
 
   if (opts.stream) {
-    // TODO: implement streaming
+    return resp;
   } else {
     const json = await resp.json();
     return json;

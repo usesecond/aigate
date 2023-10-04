@@ -122,36 +122,101 @@ export function startServer(port: number, cfg: Config) {
         }
       } else if (providerConfig.type === "Azure OpenAI Service") {
         const deploymentId = req.header("Azure-OpenAI-Deployment-Id") ||
-          data.deploymentId;
+          data.deploymentId ||
+          data.model;
+
+        const resp = await azoai.chatCompletion(
+          {
+            apiKey: providerConfig.api_key as string,
+            deploymentId: deploymentId,
+            url: providerConfig.url as string,
+            stream: data?.stream ?? false,
+          },
+          azoai.AzureOpenAIChatCompletionArgs.parse(data),
+        );
 
         if (data.stream) {
-          // TODO: Implement streaming.
-        } else {
-          const resp = await azoai.chatCompletion(
-            {
-              apiKey: providerConfig.api_key as string,
-              deploymentId: deploymentId,
-              url: providerConfig.url as string,
-            },
-            azoai.AzureOpenAIChatCompletionArgs.parse(data),
-          );
+          res.set({
+            "Content-Type": "text/html; charset=utf-8",
+            "Transfer-Encoding": "chunked",
+          });
 
+          const reader = resp.body?.getReader();
+          const decoder = new TextDecoder();
+
+          if (!reader) {
+            res.status(500).json({
+              error: "Internal server error.",
+              message: "Reader is undefined.",
+              source: "proxy",
+            });
+            return;
+          }
+
+          while (true) {
+            const { done, value } = await reader.read();
+
+            if (done) {
+              break;
+            }
+
+            const chunk = decoder.decode(value);
+
+            // deno-lint-ignore no-explicit-any
+            (res as any).write(chunk); // res as any due to missing types.
+          }
+
+          // deno-lint-ignore no-explicit-any
+          (res as any).end(); // res as any due to missing types.
+        } else {
           res.json(resp);
 
           cacher?.set(JSON.stringify({ provider, data }), JSON.stringify(resp));
           return;
         }
       } else if (providerConfig.type === "Anthropic") {
-        if (data.stream) {
-          // TODO: Implement streaming.
-        } else {
-          const resp = await anthropic.chatCompletion(
-            {
-              apiKey: providerConfig.api_key,
-            },
-            anthropic.AnthropicChatCompletionArgs.parse(data),
-          );
+        const resp = await anthropic.chatCompletion(
+          {
+            apiKey: providerConfig.api_key,
+            stream: data?.stream ?? false,
+          },
+          anthropic.AnthropicChatCompletionArgs.parse(data),
+        );
 
+        if (data?.stream) {
+          res.set({
+            "Content-Type": "text/html; charset=utf-8",
+            "Transfer-Encoding": "chunked",
+          });
+
+          const reader = resp.body?.getReader();
+          const decoder = new TextDecoder();
+
+          if (!reader) {
+            res.status(500).json({
+              error: "Internal server error.",
+              message: "Reader is undefined.",
+              source: "proxy",
+            });
+            return;
+          }
+
+          while (true) {
+            const { done, value } = await reader.read();
+
+            if (done) {
+              break;
+            }
+
+            const chunk = decoder.decode(value);
+
+            // deno-lint-ignore no-explicit-any
+            (res as any).write(chunk); // res as any due to missing types.
+          }
+
+          // deno-lint-ignore no-explicit-any
+          (res as any).end(); // res as any due to missing types.
+        } else {
           res.json(resp);
           return;
         }
